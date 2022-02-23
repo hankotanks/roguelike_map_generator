@@ -1,0 +1,12 @@
+[package]
+name = "testgen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "*"
+pyo3 = { version = "0.15.1", features = ["extension-module"]}
+
+[lib]
+name = "testgen"
+crate-type = ["cdylib"]
