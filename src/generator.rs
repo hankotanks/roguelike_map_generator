@@ -12,10 +12,10 @@ pub(crate) struct Tile {
 }
 
 impl Tile {
-    fn new() -> Tile { Tile { y: 0, x: 0, id: 255 } }
+    pub(crate) fn new() -> Tile { Tile { y: 0, x: 0, id: 255 } }
 
     // Used directly after initialization, because tiles are usually created with default values
-    fn set(&mut self, y_pos: usize, x_pos: usize, id: u8) {
+    pub(crate) fn set(&mut self, y_pos: usize, x_pos: usize, id: u8) {
         self.y = y_pos;
         self.x = x_pos;
         self.id = id;
@@ -61,7 +61,7 @@ impl Map {
     }
 }
 
-fn step(w: &mut Vec<Vec<Tile>>) {
+pub(crate) fn step(w: &mut Vec<Vec<Tile>>) {
     // copy current world state
     let mut old_w = Map::new(w.len(), w[0].len());
     for r in 0..old_w.len() {
@@ -415,4 +415,63 @@ pub(crate) fn generate(height: usize, width: usize, seed: Option<u64>) -> Vec<Ve
     for _ in 0..2 { polish(&mut world); }
 
     world
+}
+
+// Diagnostic function, will be removed when the library is used for the RL
+pub(crate) fn generate_with_steps(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Vec<Tile>>> {
+    let mut generation_steps = vec![];
+
+    // create an PRNG from the provided seed if it has a value
+    let mut prng = match seed {
+        Some(s) => SeedableRng::seed_from_u64(s),
+        None => StdRng::from_entropy()
+    };
+
+    // initialize with all 0s
+    let mut world = Map::new(height, width);
+    for r in 0..height {
+        for c in 0..width {
+            if r == 0 || r == height - 1 || c == 0 || c == width - 1 {
+                world[r][c].set(r, c, 1)
+            } else {
+                let rand: u8 = prng.gen_range(0..=1);
+
+                // sets the id of the current tile
+                world[r][c].set(r, c, match rand {
+                    0 => 0,
+                    1 => 1,
+                    j => j
+                });
+            }
+        }
+    }
+
+    generation_steps.push(world.clone());
+
+    // create cave structure w/ automata
+    for _ in 0..64 { step(&mut world); generation_steps.push(world.clone()); }
+
+    // get a list of all disconnected regions
+    let temp = world.clone();
+    let regions = get_regions(&temp);
+
+    // fill in smaller rooms
+    // after this point, regions is no longer accurate, so they must be recalculated
+    // if they are needed again later
+    prune(&mut world, &regions);
+
+    generation_steps.push(world.clone());
+
+    // recalculate regions after prune messed up the former Vec
+    let temp = world.clone();
+    let regions = get_regions(&temp);
+
+    connect(&mut world, &regions);
+
+    generation_steps.push(world.clone());
+
+    // widens paths and smooths out the cave
+    for _ in 0..2 { polish(&mut world); generation_steps.push(world.clone()); }
+
+    generation_steps
 }

@@ -1,5 +1,5 @@
 /target
 Cargo.lock
-/.idea/
-/map_generator/
-/map_generator.egg-info/
+/.idea
+/map_generator
+/map_generator.egg-info
