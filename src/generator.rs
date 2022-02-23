@@ -12,10 +12,10 @@ pub(crate) struct Tile {
 }
 
 impl Tile {
-    pub(crate) fn new() -> Tile { Tile { y: 0, x: 0, id: 255 } }
+    fn new() -> Tile { Tile { y: 0, x: 0, id: 255 } }
 
     // Used directly after initialization, because tiles are usually created with default values
-    pub(crate) fn set(&mut self, y_pos: usize, x_pos: usize, id: u8) {
+    fn set(&mut self, y_pos: usize, x_pos: usize, id: u8) {
         self.y = y_pos;
         self.x = x_pos;
         self.id = id;
@@ -61,7 +61,7 @@ impl Map {
     }
 }
 
-pub(crate) fn step(w: &mut Vec<Vec<Tile>>) {
+fn step(w: &mut Vec<Vec<Tile>>) {
     // copy current world state
     let mut old_w = Map::new(w.len(), w[0].len());
     for r in 0..old_w.len() {
