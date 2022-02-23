@@ -22,31 +22,37 @@ class IDIndex:
 
 
 def main(screen):
-    map_states = generate_from_seed_with_steps(screen.height, screen.width, 5)
+    map_states = generate_from_seed_with_steps(screen.height - 1, screen.width, 5)
 
-    last_step = map_states[0]
-    for (index, step) in enumerate(map_states):
-        if last_step == step and index != 0:
-            continue
+    pruned_map_states = {}
+
+    for key, value in map_states.items():
+        if value not in pruned_map_states.values():
+            pruned_map_states[key] = value
+
+    map_states = pruned_map_states
+
+    for (index, key) in enumerate(list(sorted(map_states.keys()))):
+        step = map_states[key]
+
+        screen.print_at(key.ljust(screen.width, '█'), 0, 0)
 
         while True:
             for y in range(0, len(step)):
                 for x in range(0, len(step[0])):
-                    screen.print_at(IDIndex.get(step[y][x]), x, y)
+                    screen.print_at(IDIndex.get(step[y][x]), x, y + 1)
 
-            key = screen.get_key()
-            if key == ord(' '):
+            key_press = screen.get_key()
+            if key_press == ord(' '):
                 break
 
             screen.refresh()
 
-        if index == len(map_states) - 1:
+        if key == list(sorted(map_states.keys()))[-1]:
             while True:
-                key = screen.get_key()
-                if key == ord('q'):
+                key_press = screen.get_key()
+                if key_press == ord('q'):
                     return
-
-        last_step = step
 
 
 if __name__ == '__main__':

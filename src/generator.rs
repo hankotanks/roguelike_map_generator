@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::slice::Iter;
 use rand::{Rng, SeedableRng, rngs::StdRng};
 
@@ -418,8 +419,9 @@ pub(crate) fn generate(height: usize, width: usize, seed: Option<u64>) -> Vec<Ve
 }
 
 // Diagnostic function, will be removed when the library is used for the RL
-pub(crate) fn generate_with_steps(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Vec<Tile>>> {
-    let mut generation_steps = vec![];
+pub(crate) fn generate_with_steps(height: usize, width: usize, seed: Option<u64>) -> HashMap<String, Vec<Vec<Tile>>> {
+    let mut count = 0;
+    let mut generation_steps: HashMap<String, Vec<Vec<Tile>>> = HashMap::new();
 
     // create an PRNG from the provided seed if it has a value
     let mut prng = match seed {
@@ -446,10 +448,11 @@ pub(crate) fn generate_with_steps(height: usize, width: usize, seed: Option<u64>
         }
     }
 
-    generation_steps.push(world.clone());
+    generation_steps.insert(format!("{:0>2} random noise", count), world.clone());
+    count += 1;
 
     // create cave structure w/ automata
-    for _ in 0..64 { step(&mut world); generation_steps.push(world.clone()); }
+    for j in 0..64 { step(&mut world); generation_steps.insert(format!("{:0>2} cellular automata {}", count, j), world.clone()); count += 1; }
 
     // get a list of all disconnected regions
     let temp = world.clone();
@@ -460,7 +463,8 @@ pub(crate) fn generate_with_steps(height: usize, width: usize, seed: Option<u64>
     // if they are needed again later
     prune(&mut world, &regions);
 
-    generation_steps.push(world.clone());
+    generation_steps.insert(format!("{:0>2} prune regions below threshold", count), world.clone());
+    count += 1;
 
     // recalculate regions after prune messed up the former Vec
     let temp = world.clone();
@@ -468,10 +472,11 @@ pub(crate) fn generate_with_steps(height: usize, width: usize, seed: Option<u64>
 
     connect(&mut world, &regions);
 
-    generation_steps.push(world.clone());
+    generation_steps.insert(format!("{:0>2} connect remaining rooms", count), world.clone());
+    count += 1;
 
     // widens paths and smooths out the cave
-    for _ in 0..2 { polish(&mut world); generation_steps.push(world.clone()); }
+    for j in 0..2 { polish(&mut world); generation_steps.insert(format!("{:0>2} polish {}", count, j), world.clone()); count += 1; }
 
     generation_steps
 }

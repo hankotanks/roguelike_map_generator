@@ -1,5 +1,6 @@
 mod generator;
 
+use std::collections::HashMap;
 use pyo3::prelude::*;
 
 fn convert_map(w: &Vec<Vec<generator::Tile>>) -> Vec<Vec<u8>> {
@@ -33,11 +34,11 @@ fn generate_from_seed(height: usize, width: usize, seed: u64) -> PyResult<Vec<Ve
 
 // A testing function
 #[pyfunction]
-fn generate_from_seed_with_steps(height: usize, width: usize, seed: u64) -> PyResult<Vec<Vec<Vec<u8>>>> {
+fn generate_from_seed_with_steps(height: usize, width: usize, seed: u64) -> PyResult<HashMap<String, Vec<Vec<u8>>>> {
     let world_states = generator::generate_with_steps(height, width, Some(seed));
-    let mut converted_states: Vec<Vec<Vec<u8>>> = vec![];
-    for state in world_states.iter() {
-        converted_states.push(convert_map(state));
+    let mut converted_states: HashMap<String, Vec<Vec<u8>>> = HashMap::new();
+    for (description, state) in &world_states {
+        converted_states.insert(description.clone(), convert_map(state));
     }
 
     Ok(converted_states)
