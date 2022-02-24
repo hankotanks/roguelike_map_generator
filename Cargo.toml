@@ -1,12 +1,15 @@
 [package]
-name = "testgen"
+name = "map_generator"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rand = "*"
-pyo3 = { version = "0.15.1", features = ["extension-module"]}
+rand = "0.8.5"
+
+[dependencies.pyo3]
+version = "0.15.1"
+features = ["extension-module"]
 
 [lib]
-name = "testgen"
+name = "map_generator"
 crate-type = ["cdylib"]
