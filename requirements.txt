@@ -1,0 +1,6 @@
+# build requirements
+setuptools~=60.9.3
+setuptools_rust~=1.1.2
+
+# used for display.py
+asciimatics~=1.13.0
