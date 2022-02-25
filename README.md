@@ -38,9 +38,19 @@ Generates a map from a provided seed. Functions the same as `generate` with an e
 
 ```
 Additional Parameters:
-    seed (int): The initial random noise will be seeded with this number
+    seed (int): The initial noise will be seeded with this number
     
 from os import urandom
-seed = urandom(16)
-map_generator.generate_from_seed(10, 10, seed)
+with urandom(16) as seed:
+    map_generator.generate_from_seed(10, 10, seed)
+```
+
+## Requirements
+
+Rust and python package requirements are specified in `Cargo.toml` and `requirements.txt` respectively. Assuming cargo is installed, any missing crates should be acquired automatically when running `build.sh` to compile the project.
+
+Run the following to install Python dependencies beforehand:
+
+```
+pip install -r requirements.txt
 ```
