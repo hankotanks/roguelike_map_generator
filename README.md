@@ -55,11 +55,10 @@ Run the following to install Python dependencies beforehand:
 pip install -r requirements.txt
 ```
 
-## Importing the module
+## Importing
 ```
 import sys
 sys.path.insert(0, "/path/to/map_generator")
 
-from map_generator.map_generator import generate_from_seed
-```
+from map_generator import generate, generate_from_seed
 ```
