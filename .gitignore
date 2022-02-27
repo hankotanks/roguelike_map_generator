@@ -3,3 +3,4 @@ Cargo.lock
 /.idea
 /map_generator
 /map_generator.egg-info
+*.pyd
