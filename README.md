@@ -1,6 +1,6 @@
 # map_generator
 
-A Python module, written in Rust, that generates 2D, interconnected cave systems.
+A Python module, written in Rust, that generates 2D, interconnected cave systems. The project is compiled into a Python module using `pyo3`, which allows it to be imported like any other module.
 
 ## Example
 
