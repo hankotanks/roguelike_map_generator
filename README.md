@@ -1,64 +1,37 @@
 # map_generator
 
-A Python module, written in Rust, that generates 2D, interconnected cave systems. The project is compiled into a Python module using `pyo3`, which allows it to be imported like any other module.
+A library that generates 2D-interconnected cave systems. Optionally, can be compiled into a Python module. 
+
+I created this project (my first foray into Rust) as an exercise in array manipulation, procedural generation, and algorithmic thinking as a whole.
+
+Ultimately, `map_generator` will serve as a basis for a [traditional roguelike](https://en.wikipedia.org/wiki/Roguelike) focused on spelunking, evasion, and terrain traversal.
 
 ## Example
 
 <img src="./examples/example.gif" width="256">
 
-## Generation steps
-
-- `random noise` The map grid is randomly seeded with empty/wall tiles in an even ratio. The outer edges are always wall tiles.
-- `cellular automata` Each tile in the grid is filled if it has more than 4 adjacent wall tiles. Otherwise it becomes empty. This step is applied 64 times.
-- `prune` Rooms that are significantly smaller than the largest room are filled in.
-- `connect remaining rooms` Paths are drawn between the center tiles of each room. Tiles along each path are set to empty.
-- `polish` Also uses cellular automata, except this step opens up narrow passageways. Each wall tile becomes empty if it has >2 empty neighbors.
-
 ## Functions
+`generate(height: int, width: int) ⟶ List(List(int))`
 
-### `generate(height, width)`
-
-Generates a map with a random seed.
-
-```
-Parameters:
-    height (int): Number of rows in the generated map
-    width  (int): Number of columns
-     
-Returns:
-    list(list(int)): The generated map, 
-                     each nested list represents a row
-    
-map_generator.generate(10, 10)
-```
-
-### `generate_from_seed(height, width, seed)`
-
-Generates a map from a provided seed. Functions the same as `generate` with an extra parameter.
-
-```
-Additional Parameters:
-    seed (int): The initial noise will be seeded with this number
-    
-from os import urandom
-with urandom(16) as seed:
-    map_generator.generate_from_seed(10, 10, seed)
-```
+`generate_from_seed(height: int, width: int, seed: int) ⟶ List(List(int))`
 
 ## Requirements
 
-Rust and python package requirements are specified in `Cargo.toml` and `requirements.txt` respectively. Assuming cargo is installed, any missing crates should be acquired automatically when running `build.sh` to compile the project.
-
-Run the following to install Python dependencies beforehand:
-
+Rust and Python requirements are specified in `Cargo.toml` and `requirements.txt` respectively. Cargo should handle Rust dependencies automatically; any missing Python modules can be installed with the following:
 ```
 pip install -r requirements.txt
 ```
 
-## Importing
+## Usage
 ```
-import sys
-sys.path.insert(0, "/path/to/map_generator")
+import os, sys
 
-from map_generator import generate, generate_from_seed
+from map_generator import generate_from_seed
+
+seed = int.from_bytes(os.urandom(8), 'big')
+world = generate_from_seed(32, 64, seed)
+for row in world:
+    for cell in row:
+        sys.stdout.write("#" if cell else " ")
+    sys.stdout.write("\n")
 ```
