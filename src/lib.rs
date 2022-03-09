@@ -31,10 +31,21 @@ fn generate_from_seed(height: usize, width: usize, seed: u64) -> PyResult<Vec<Ve
     Ok(map)
 }
 
+#[pyfunction]
+fn generate_with_rooms(height: usize, width: usize, seed: u64) -> PyResult<Vec<Vec<u8>>> {
+    let seed = Some(seed);
+
+    let map = generator::generate_with_rooms(height, width, seed);
+    let map = convert_map(&map);
+
+    Ok(map)
+}
+
 #[pymodule]
 fn map_generator(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(generate, m)?)?;
     m.add_function(wrap_pyfunction!(generate_from_seed, m)?)?;
+    m.add_function(wrap_pyfunction!(generate_with_rooms, m)?)?;
 
     Ok(())
 }

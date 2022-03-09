@@ -52,6 +52,26 @@ impl<'a> Region<'a> {
     }
 }
 
+// Regions have no concept of dimensions, so they aren't always appropriate
+// A BoundingBox defines an area solely by its dimensions, not by reference
+#[derive(Clone, Debug)]
+struct BoundingBox {
+    x: usize,
+    y: usize,
+    width: usize,
+    height: usize
+}
+
+impl BoundingBox {
+     fn x_maxima(&self) -> usize {
+         self.x + self.width
+    }
+
+    fn y_maxima(&self) -> usize {
+        self.y + self.height
+    }
+}
+
 // Abstraction for creating a new map array
 struct Map;
 
@@ -102,7 +122,7 @@ fn get_neighbor_count(w: &Vec<Vec<Tile>>, r: usize, c: usize) -> usize {
     for i in (r - 1)..=(r + 1) {
         for j in (c - 1)..=(c + 1) {
             if i == r && j == c { continue; }
-            count += if w[i][j].id == 1 { 1 } else { 0 };
+            count += if w[i][j].id != 0 { 1 } else { 0 };
         }
     }
     count
@@ -198,7 +218,7 @@ fn flood_fill<'b>(w: &'b Vec<Vec<Tile>>, filled: &mut Region<'b>, tile: &'b Tile
 // 1st tile is minima
 // 2nd tile is maxima
 // NOTE: extrema may NOT be a member of the region they represent
-fn find_extrema<'a>(w: &'a Vec<Vec<Tile>>, region: &Region) -> [&'a Tile; 2] {
+fn find_extrema(region: &Region) -> BoundingBox {
     let mut minima: Option<[usize; 2]> = None;
     let mut maxima: Option<[usize; 2]> = None;
 
@@ -224,17 +244,22 @@ fn find_extrema<'a>(w: &'a Vec<Vec<Tile>>, region: &Region) -> [&'a Tile; 2] {
     let minima = minima.unwrap();
     let maxima = maxima.unwrap();
 
-    // construct the output array and return
-    [&w[minima[0]][minima[1]], &w[maxima[0]][maxima[1]]]
+    // construct the BoundingBox and return
+    BoundingBox {
+        x: minima[1],
+        y: minima[0],
+        width: maxima[1] - minima[1],
+        height: maxima[0] - minima[0]
+    }
 }
 
 // returns the tile at the center of the region's bounding box
 // NOTE: center tile may NOT be a member of the supplied region
 fn find_center_tile<'a>(w: &'a Vec<Vec<Tile>>, region: &Region) -> &'a Tile {
     // get bounding tiles
-    let minima = find_extrema(w, region);
-    let maxima = minima[1];
-    let minima = minima[0];
+    let bb = find_extrema(region);
+    let maxima = w[bb.y][bb.x];
+    let minima = w[bb.y_maxima()][bb.x_maxima()];
 
     // REMINDER: this is integer division, it will round down
     let center_x = (maxima.x + minima.x) / 2;
@@ -256,7 +281,7 @@ fn get_distance_sq(t1: &Tile, t2: &Tile) -> usize {
 }
 
 // Used IFF the center tile is not actually a member of the region it represents
-fn find_closest_to_tile<'a>(region: &'a Region<'a>, center: &'a Tile) -> &'a Tile {
+fn get_tile_closest_to_center<'a>(region: &'a Region<'a>, center: &'a Tile) -> &'a Tile {
     let mut closest: &Tile = region.at(1);
     let mut closest_dist: usize = get_distance_sq(center, closest);
     for tile in region.iter() {
@@ -277,12 +302,12 @@ fn find_connection<'a>(w: &'a Vec<Vec<Tile>>, r1: &Region, r2: &Region) -> Regio
     let mut r2_center = find_center_tile(w, r2);
 
     // account for regions that don't include their center Tile
-    if r1_center.id == 1 {
-        r1_center = find_closest_to_tile(r1, r1_center);
+    if r1_center.id != 0 {
+        r1_center = get_tile_closest_to_center(r1, r1_center);
     }
 
-    if r2_center.id == 1 {
-        r2_center = find_closest_to_tile(r2, r2_center);
+    if r2_center.id != 0 {
+        r2_center = get_tile_closest_to_center(r2, r2_center);
     }
 
     // calculate the slope of the line connecting the two centers
@@ -415,4 +440,92 @@ pub(crate) fn generate(height: usize, width: usize, seed: Option<u64>) -> Vec<Ve
     for _ in 0..2 { polish(&mut world); }
 
     world
+}
+
+fn get_fill_percentage(w: &Vec<Vec<Tile>>, bounds: &BoundingBox) -> f32 {
+    let mut empty = 0;
+
+    // iterate through each tile in the BoundingBox
+    for y in bounds.y..(bounds.y + bounds.height) {
+        for x in bounds.x..(bounds.x + bounds.width) {
+            // increment count if it is empty
+            if w[y][x].id == 0 { empty += 1; }
+        }
+    }
+
+    // return a value that represents the percent of empty tiles within the BoundingBox
+    empty as f32 / (bounds.height as f32 * bounds.width as f32)
+}
+
+// Returns a BoundingBox that defines the area in which rooms should be generated
+// The function prioritizes areas that interrupt as little of the previous generation as possible
+fn find_room_bounding_box(w: &Vec<Vec<Tile>>, prng: &mut StdRng) -> BoundingBox {
+    // temporary variable with possible bounding box widths
+    let width_range =
+        (0.4472 * w[0].len() as f32) as usize / 2..(0.4472 * w[0].len() as f32) as usize * 2;
+
+    // initialize BoundingBox that will encompass all generated rooms
+    let mut bb = BoundingBox {
+        x: 0,
+        y: 0,
+        width: prng.gen_range(width_range),
+        height: 0
+    };
+
+    // the height attribute must be assigned separately: it depends on bb.width
+    bb.height = (w.len() as f32 * w[0].len() as f32 * 0.2) as usize / bb.width;
+
+    // variables that describe the best placement of the bounding box in the world
+    let mut percent: f32 = 1.0;
+
+    // test a number of different positions
+    for _ in 0..20 {
+        // randomize new coordinates
+        // and assign them to a temporary BoundingBox
+        let mut curr_bb = bb.clone();
+        curr_bb.x = prng.gen_range(1..(w[0].len() - bb.width - 1));
+        curr_bb.y = prng.gen_range(1..(w.len() - bb.height - 1));
+
+        // if the BoundingBox covers less of the cave structure, it is a better fit and is assigned
+        let curr_percent = get_fill_percentage(w, &curr_bb);
+        if curr_percent < percent {
+            bb.x = curr_bb.x;
+            bb.y = curr_bb.y;
+            percent = curr_percent;
+        }
+
+    }
+
+    // return most suitable BoundingBox
+    bb
+}
+
+pub(crate) fn generate_with_rooms(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Tile>> {
+    // process the seed and create a PRNG object
+    let mut prng = match seed {
+        Some(s) => SeedableRng::seed_from_u64(s),
+        None => StdRng::from_entropy()
+    };
+
+    // start with a standard cave map
+    let mut world = generate(height, width, seed);
+
+    // get the BoundingBox where rooms will be drawn
+    let bb: BoundingBox = find_room_bounding_box(&world, &mut prng);
+
+    // TODO Place rooms into the world with the following rules:
+    //      * Rooms should not overlap one another
+    //      * When placed, they hollow out the room interiors
+    //      * Tiles not part of the walls or interior of a room are left as is
+    //      * Room walls have Tile.id = 2
+
+    // NOTE: this is a temporary snippet that hollows out the area represented by the BoundingBox
+    for y in bb.y..bb.y_maxima() {
+        for x in bb.x..bb.x_maxima() {
+            world[y][x].id = 0;
+        }
+    }
+
+    world
+
 }
