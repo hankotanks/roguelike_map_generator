@@ -10,6 +10,11 @@ rand = "0.8.5"
 version = "0.15.1"
 features = ["extension-module"]
 
+[[bin]]
+name = "map_generator"
+path = "src/main.rs"
+
 [lib]
 name = "map_generator"
-crate-type = ["cdylib"]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
