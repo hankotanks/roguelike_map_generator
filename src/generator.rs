@@ -1,21 +1,19 @@
+use rand::Rng;
 use std::cmp::Ordering;
 use std::slice::Iter;
-use rand::{Rng, SeedableRng, rngs::StdRng};
-
-// Define constants
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub(crate) struct Tile {
+pub struct Tile {
     y: usize,
     x: usize,
-    pub(crate) id: u8,
+    pub id: u8,
 }
 
 impl Tile {
     fn new() -> Tile { Tile { y: 0, x: 0, id: 255 } }
 
     // Used directly after initialization, because tiles are usually created with default values
-    fn set(&mut self, y_pos: usize, x_pos: usize, id: u8) {
+    pub(crate) fn set(&mut self, y_pos: usize, x_pos: usize, id: u8) {
         self.y = y_pos;
         self.x = x_pos;
         self.id = id;
@@ -23,7 +21,7 @@ impl Tile {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-struct Region<'a>(Vec<&'a Tile>);
+pub(crate) struct Region<'a>(Vec<&'a Tile>);
 
 impl<'a> Region<'a> {
     // abstracted functions that apply to 'tiles'
@@ -55,11 +53,11 @@ impl<'a> Region<'a> {
 // Regions have no concept of dimensions, so they aren't always appropriate
 // A BoundingBox defines an area solely by its dimensions, not by reference
 #[derive(Clone, Debug)]
-struct BoundingBox {
+pub(crate) struct BoundingBox {
     x: usize,
-    y: usize,
-    width: usize,
-    height: usize
+    pub(crate) y: usize,
+    pub(crate) width: usize,
+    pub(crate) height: usize
 }
 
 impl BoundingBox {
@@ -73,15 +71,15 @@ impl BoundingBox {
 }
 
 // Abstraction for creating a new map array
-struct Map;
+pub(crate) struct Map;
 
 impl Map {
-    fn new(height: usize, width: usize) -> Vec<Vec<Tile>> {
+    pub(crate) fn new(height: usize, width: usize) -> Vec<Vec<Tile>> {
         vec![vec![Tile::new(); width]; height]
     }
 }
 
-fn step(w: &mut Vec<Vec<Tile>>) {
+pub(crate) fn step(w: &mut Vec<Vec<Tile>>) {
     // copy current world state
     let mut old_w = Map::new(w.len(), w[0].len());
     for r in 0..old_w.len() {
@@ -99,7 +97,7 @@ fn step(w: &mut Vec<Vec<Tile>>) {
 }
 
 // this method is similar to step but is used to widen the cave after initial generation
-fn polish(w: &mut Vec<Vec<Tile>>) {
+pub(crate) fn polish(w: &mut Vec<Vec<Tile>>) {
     let mut old_w = Map::new(w.len(), w[0].len());
     for r in 0..old_w.len() {
         for c in 0..old_w[0].len() {
@@ -129,7 +127,7 @@ fn get_neighbor_count(w: &Vec<Vec<Tile>>, r: usize, c: usize) -> usize {
 }
 
 // Return a list of regions (enclosed caves) using a flood fill algorithm
-fn get_regions(w: &Vec<Vec<Tile>>) -> Vec<Region> {
+pub(crate) fn get_regions(w: &Vec<Vec<Tile>>) -> Vec<Region> {
     // the number of tiles tested is dependent on the size of the region
     let tries = w.len() * w[0].len() / 2;
 
@@ -359,7 +357,7 @@ fn should_be_pruned(region: &Region, min_size: usize) -> bool {
 
 // Fills regions below a certain size
 // Relative to the largest region
-fn prune(w: &mut Vec<Vec<Tile>>, regions: &Vec<Region>) {
+pub(crate) fn prune(w: &mut Vec<Vec<Tile>>, regions: &Vec<Region>) {
     let threshold = 0.2;
     let largest: &Region = get_largest_region(&regions);
     let threshold_size = (largest.len() as f32 * threshold) as usize;
@@ -373,7 +371,7 @@ fn prune(w: &mut Vec<Vec<Tile>>, regions: &Vec<Region>) {
 }
 
 // Fills each path found by the find_all_connections() function
-fn connect(w: &mut Vec<Vec<Tile>>, regions: &Vec<Region>) {
+pub(crate) fn connect(w: &mut Vec<Vec<Tile>>, regions: &Vec<Region>) {
     let temp = w.clone();
     let largest: &Region = get_largest_region(regions);
 
@@ -390,142 +388,4 @@ fn connect(w: &mut Vec<Vec<Tile>>, regions: &Vec<Region>) {
     for path in paths.iter() {
         set_all_tiles_in_region(w, path, 0);
     }
-}
-
-pub(crate) fn generate(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Tile>> {
-    // create an PRNG from the provided seed if it has a value
-    let mut prng = match seed {
-        Some(s) => SeedableRng::seed_from_u64(s),
-        None => StdRng::from_entropy()
-    };
-
-    // initialize with all 0s
-    let mut world = Map::new(height, width);
-    for r in 0..height {
-        for c in 0..width {
-            if r == 0 || r == height - 1 || c == 0 || c == width - 1 {
-                world[r][c].set(r, c, 1)
-            } else {
-                let rand: u8 = prng.gen_range(0..=1);
-
-                // sets the id of the current tile
-                world[r][c].set(r, c, match rand {
-                    0 => 0,
-                    1 => 1,
-                    j => j
-                });
-            }
-        }
-    }
-
-    // create cave structure w/ automata
-    for _ in 0..64 { step(&mut world); }
-
-    // get a list of all disconnected regions
-    let temp = world.clone();
-    let regions = get_regions(&temp);
-
-    // fill in smaller rooms
-    // after this point, regions is no longer accurate, so they must be recalculated
-    // if they are needed again later
-    prune(&mut world, &regions);
-
-    // recalculate regions after prune messed up the former Vec
-    let temp = world.clone();
-    let regions = get_regions(&temp);
-
-    connect(&mut world, &regions);
-
-    // widens paths and smooths out the cave
-    for _ in 0..2 { polish(&mut world); }
-
-    world
-}
-
-fn get_fill_percentage(w: &Vec<Vec<Tile>>, bounds: &BoundingBox) -> f32 {
-    let mut empty = 0;
-
-    // iterate through each tile in the BoundingBox
-    for y in bounds.y..(bounds.y + bounds.height) {
-        for x in bounds.x..(bounds.x + bounds.width) {
-            // increment count if it is empty
-            if w[y][x].id == 0 { empty += 1; }
-        }
-    }
-
-    // return a value that represents the percent of empty tiles within the BoundingBox
-    empty as f32 / (bounds.height as f32 * bounds.width as f32)
-}
-
-// Returns a BoundingBox that defines the area in which rooms should be generated
-// The function prioritizes areas that interrupt as little of the previous generation as possible
-fn find_room_bounding_box(w: &Vec<Vec<Tile>>, prng: &mut StdRng) -> BoundingBox {
-    // temporary variable with possible bounding box widths
-    let width_range =
-        (0.4472 * w[0].len() as f32) as usize / 2..(0.4472 * w[0].len() as f32) as usize * 2;
-
-    // initialize BoundingBox that will encompass all generated rooms
-    let mut bb = BoundingBox {
-        x: 0,
-        y: 0,
-        width: prng.gen_range(width_range),
-        height: 0
-    };
-
-    // the height attribute must be assigned separately: it depends on bb.width
-    bb.height = (w.len() as f32 * w[0].len() as f32 * 0.2) as usize / bb.width;
-
-    // variables that describe the best placement of the bounding box in the world
-    let mut percent: f32 = 1.0;
-
-    // test a number of different positions
-    for _ in 0..20 {
-        // randomize new coordinates
-        // and assign them to a temporary BoundingBox
-        let mut curr_bb = bb.clone();
-        curr_bb.x = prng.gen_range(1..(w[0].len() - bb.width - 1));
-        curr_bb.y = prng.gen_range(1..(w.len() - bb.height - 1));
-
-        // if the BoundingBox covers less of the cave structure, it is a better fit and is assigned
-        let curr_percent = get_fill_percentage(w, &curr_bb);
-        if curr_percent < percent {
-            bb.x = curr_bb.x;
-            bb.y = curr_bb.y;
-            percent = curr_percent;
-        }
-
-    }
-
-    // return most suitable BoundingBox
-    bb
-}
-
-pub(crate) fn generate_with_rooms(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Tile>> {
-    // process the seed and create a PRNG object
-    let mut prng = match seed {
-        Some(s) => SeedableRng::seed_from_u64(s),
-        None => StdRng::from_entropy()
-    };
-
-    // start with a standard cave map
-    let mut world = generate(height, width, seed);
-
-    // get the BoundingBox where rooms will be drawn
-    let bb: BoundingBox = find_room_bounding_box(&world, &mut prng);
-
-    // TODO Place rooms into the world with the following rules:
-    //      * Rooms should not overlap one another
-    //      * When placed, they hollow out the room interiors
-    //      * Tiles not part of the walls or interior of a room are left as is
-    //      * Room walls have Tile.id = 2
-
-    // NOTE: this is a temporary snippet that hollows out the area represented by the BoundingBox
-    for y in bb.y..bb.y_maxima() {
-        for x in bb.x..bb.x_maxima() {
-            world[y][x].id = 0;
-        }
-    }
-
-    world
-
 }
