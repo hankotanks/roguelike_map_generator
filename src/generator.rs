@@ -1,11 +1,12 @@
 use rand::Rng;
 use std::cmp::Ordering;
+use std::ops::Range;
 use std::slice::Iter;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Tile {
-    y: usize,
-    x: usize,
+    pub(crate) y: usize,
+    pub(crate) x: usize,
     pub id: u8,
 }
 
@@ -26,16 +27,16 @@ pub(crate) struct Region<'a>(Vec<&'a Tile>);
 impl<'a> Region<'a> {
     // abstracted functions that apply to 'tiles'
     // 'tiles' should not be accessed outside of the functions in the next block
-    fn new() -> Region<'a> { Region { 0: vec![] } }
+    pub(crate) fn new() -> Region<'a> { Region { 0: vec![] } }
 
-    fn len(&self) -> usize { self.0.len() }
+    pub(crate) fn len(&self) -> usize { self.0.len() }
     fn iter(&self) -> Iter<'_, &'a Tile> { self.0.iter() }
     fn push(&mut self, tile: &'a Tile) { self.0.push(tile); }
     fn contains(&self, tile: &'a Tile) -> bool { self.0.contains(&tile) }
-    fn at(&self, index: usize) -> &Tile { self.0[index] }
+    pub(crate) fn at(&self, index: usize) -> &Tile { self.0[index] }
 
     // adds a single tile reference to the region
-    fn append(&mut self, tile: &'a Tile) {
+    pub(crate) fn append(&mut self, tile: &'a Tile) {
         self.push(tile)
     }
 
@@ -54,19 +55,27 @@ impl<'a> Region<'a> {
 // A BoundingBox defines an area solely by its dimensions, not by reference
 #[derive(Clone, Debug)]
 pub(crate) struct BoundingBox {
-    x: usize,
+    pub(crate) x: usize,
     pub(crate) y: usize,
     pub(crate) width: usize,
     pub(crate) height: usize
 }
 
 impl BoundingBox {
-     fn x_maxima(&self) -> usize {
+    pub(crate) fn x_maxima(&self) -> usize {
          self.x + self.width
     }
 
-    fn y_maxima(&self) -> usize {
+    pub(crate) fn y_maxima(&self) -> usize {
         self.y + self.height
+    }
+
+    pub(crate) fn y_range(&self) -> Range<usize> {
+        self.y..(self.y_maxima() + 1)
+    }
+
+    pub(crate) fn x_range(&self) -> Range<usize> {
+        self.x..(self.x_maxima() + 1)
     }
 }
 
