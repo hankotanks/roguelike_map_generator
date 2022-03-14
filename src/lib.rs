@@ -1,9 +1,12 @@
 mod generator;
+mod rooms;
 
 use pyo3::prelude::*;
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+
 use crate::generator::{connect, get_regions, Map, polish, prune, step, Tile};
+use crate::rooms::construct_rooms;
 
 pub fn build(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Tile>> {
     // create an PRNG from the provided seed if it has a value
@@ -51,6 +54,8 @@ pub fn build(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Tile>> {
 
     // widens paths and smooths out the cave
     for _ in 0..2 { polish(&mut world); }
+
+    construct_rooms(&mut world, &mut prng);
 
     world
 }
