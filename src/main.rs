@@ -13,7 +13,7 @@ fn main() {
         (3, "+".magenta().on_black())
     ]);
     let now = Instant::now();
-    let world = build(32, 98, None);
+    let world = build(32, 96, None);
     let elapsed = now.elapsed();
 
     for y in 0..world.len() {

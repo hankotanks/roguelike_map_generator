@@ -53,7 +53,7 @@ impl<'a> Region<'a> {
 
 // Regions have no concept of dimensions, so they aren't always appropriate
 // A BoundingBox defines an area solely by its dimensions, not by reference
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) struct BoundingBox {
     pub(crate) x: usize,
     pub(crate) y: usize,

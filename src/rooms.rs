@@ -45,15 +45,11 @@ fn touches_any(all_rooms: &Vec<BoundingBox>, r: &BoundingBox) -> bool {
 }
 
 fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, all_rooms: &Vec<BoundingBox>, touches: bool) -> Option<BoundingBox> {
-    let height = w.len();
-    let width = w[0].len();
-
-    let multiplier = (height as f32 * 0.1414) as usize;
-    let dimensions = ((height * width) as f32 * 0.02) as usize;
-
-    let height_range = (multiplier * 3 / 4)..(multiplier * 2);
-    let height = prng.gen_range(height_range);
-    let width = dimensions / height;
+    let mult = 0.02f32;
+    let height = prng.gen_range(
+        (mult.sqrt() * 3f32 / 4f32 * w.len() as f32)..
+            (mult.sqrt() * 2f32 * w.len() as f32)) as usize;
+    let width = (mult * (w.len() * w[0].len()) as f32) as usize / height;
 
     let mut room = BoundingBox {
         x: 0,
@@ -62,27 +58,38 @@ fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, all_rooms: &Vec<BoundingB
         width
     };
 
-    let mut attempts = 64;
-    loop {
+    let mut attempts = 32;
+    return loop {
         room.x = prng.gen_range(1..(w[0].len() - room.width - 1));
         room.y = prng.gen_range(1..(w.len() - room.height - 1));
 
         let percent = get_percent_empty_in_bounds(w, &room);
-        if percent < 0.20 {
-            if (touches && touches_any(all_rooms, &room)) || (!touches && percent > 0f32) {
-                break;
+
+        if (percent < 0.20) && ((touches && touches_any(all_rooms, &room)) || (!touches && percent > 0f32)) {
+            break Some(room);
+        }
+
+        attempts -= 1;
+
+        if attempts == 0 {
+            let mut finished = false;
+            match prng.gen_bool(0.5) {
+                true => {
+                    room.width -= if room.width > 3 { 1 } else { finished = true; 0 };
+                },
+                false => {
+                    room.height -= if room.height > 3 { 1 } else { finished = true; 0 };
+                }
             }
-        } else { attempts -= 1; }
 
-        if attempts == 0 { break; }
-    }
-
-    if attempts == 0 {
-        return None;
-    }
-
-    Some(room)
-
+            if finished {
+                break None;
+            } else {
+                println!("Reset attempts!");
+                attempts += 32;
+            }
+        }
+    };
 }
 
 fn has_doors(side: &Vec<&Tile>) -> bool {
@@ -122,21 +129,34 @@ fn get_sides_of_room<'a>(w: &'a Vec<Vec<Tile>>, bounds: &BoundingBox) -> Vec<Vec
 pub(crate) fn construct_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
     let mut all_rooms: Vec<BoundingBox> = Vec::new();
 
-    //all_rooms.push(get_new_room(w, prng, &all_rooms, false).unwrap());
-
-    'outer: loop {
+    'independent: loop {
         let curr: BoundingBox;
-        let should_touch = if all_rooms.len() >= 4 { true } else { false };
-
-
-        match get_new_room(w, prng, &all_rooms, should_touch) {
+        match get_new_room(w, prng, &all_rooms, false) {
             Some(room) => { curr = room; },
-            None => { break 'outer; }
+            None => { break 'independent; }
         }
 
         for room in all_rooms.iter() {
             if do_rooms_overlap(room, &curr) {
-                continue 'outer;
+                continue 'independent;
+            }
+        }
+
+        all_rooms.push(curr);
+
+    }
+
+    'connected: loop {
+        let curr: BoundingBox;
+
+        match get_new_room(w, prng, &all_rooms, true) {
+            Some(room) => { curr = room; },
+            None => { break 'connected; }
+        }
+
+        for room in all_rooms.iter() {
+            if do_rooms_overlap(room, &curr) {
+                continue 'connected;
             }
         }
 
