@@ -1,8 +1,8 @@
 use rand::Rng;
 use rand::rngs::StdRng;
 
-use crate::generator::BoundingBox;
-use crate::Tile;
+use crate::generator::{BoundingBox};
+use crate::{Tile};
 
 fn do_rooms_overlap(b0: &BoundingBox, b1: &BoundingBox) -> bool {
     !(
@@ -126,6 +126,14 @@ fn get_sides_of_room<'a>(w: &'a Vec<Vec<Tile>>, bounds: &BoundingBox) -> Vec<Vec
     sides
 }
 
+fn contained_in_rooms(rooms: &Vec<BoundingBox>, x: usize, y: usize) -> bool {
+    for room in rooms.iter() {
+        if room.contains(x, y) { return true; }
+    }
+
+    false
+}
+
 pub(crate) fn construct_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
     let mut all_rooms: Vec<BoundingBox> = Vec::new();
 
@@ -183,12 +191,67 @@ pub(crate) fn construct_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
         'side: for side in sides.iter() {
             if has_doors(side) { continue 'side; }
 
-            let mut possibilities: Vec<[[usize; 2]; 2]> = Vec::new();
-            for tile in side.iter() {
+            let mut possibilities: Vec<Vec<[usize; 2]>> = Vec::new();
+            let max_corridor_length = 6;
+            'tile: for (n, tile) in side.iter().enumerate() {
+                if n == 0 || n == side.len() { continue 'tile; }
+
                 if (w[tile.y - 1][tile.x].id == 0 && w[tile.y + 1][tile.x].id == 0) ||
                     (w[tile.y][tile.x - 1].id == 0 && w[tile.y][tile.x + 1].id == 0) {
-                    possibilities.push([[tile.y, tile.x], [0, 0]]);
-                } else if w[tile.y - 1][tile.x].id == 2 && w[tile.y - 2][tile.x].id == 0 && w[tile.y + 1][tile.x].id == 0 {
+                    possibilities.push(vec![[tile.y, tile.x]]);
+                    continue 'tile;
+                }
+
+                if w[tile.y - 1][tile.x].id == 0 && room.contains(tile.x, tile.y - 1) {
+                    let mut current: Vec<[usize; 2]> = Vec::new();
+                    for y in tile.y..(if tile.y + max_corridor_length >= w.len() { w.len() - 1 } else { tile.y + max_corridor_length }) {
+                        if w[y][tile.x].id == 1 || w[y][tile.x].id == 2 || w[y][tile.x].id == 3 {
+                            current.push([y, tile.x]);
+                        } else if w[y][tile.x].id == 0 && contained_in_rooms(&all_rooms, tile.x, y) {
+                            possibilities.push(current.clone());
+                            continue 'tile;
+                        }
+                    }
+                }
+
+                if w[tile.y + 1][tile.x].id == 0 && room.contains(tile.x, tile.y + 1) {
+                    let mut current: Vec<[usize; 2]> = Vec::new();
+                    for y in ((if (tile.y as isize - max_corridor_length as isize) < 0isize { 0 } else { tile.y - max_corridor_length })..=tile.y).rev() {
+                        if w[y][tile.x].id == 1 || w[y][tile.x].id == 2 || w[y][tile.x].id == 3 {
+                            current.push([y, tile.x]);
+                        } else if w[y][tile.x].id == 0 && contained_in_rooms(&all_rooms, tile.x, y) {
+                            possibilities.push(current.clone());
+                            continue 'tile;
+                        }
+                    }
+                }
+
+                if w[tile.y][tile.x - 1].id == 0 && room.contains(tile.x - 1, tile.y) {
+                    let mut current: Vec<[usize; 2]> = Vec::new();
+                    for x in tile.x..(if tile.x + max_corridor_length >= w[0].len() { w[0].len() - 1 } else { tile.x + max_corridor_length }) {
+                        if w[tile.y][x].id == 1 || w[tile.y][x].id == 2 || w[tile.y][x].id == 3 {
+                            current.push([tile.y, x]);
+                        } else if w[tile.y][x].id == 0 && contained_in_rooms(&all_rooms, x, tile.y){
+                            possibilities.push(current.clone());
+                            continue 'tile;
+                        }
+                    }
+                }
+
+                if w[tile.y][tile.x + 1].id == 0 && room.contains(tile.x + 1, tile.y) {
+                    let mut current: Vec<[usize; 2]> = Vec::new();
+                    for x in ((if (tile.x as isize - max_corridor_length as isize) < 0isize { 0 } else { tile.x - max_corridor_length })..=tile.x).rev() {
+                        if w[tile.y][x].id == 1 || w[tile.y][x].id == 2 || w[tile.y][x].id == 3 {
+                            current.push([tile.y, x]);
+                        } else if w[tile.y][x].id == 0 && contained_in_rooms(&all_rooms, x, tile.y) {
+                            possibilities.push(current.clone());
+                            continue 'tile;
+                        }
+                    }
+                }
+
+                /*
+                else if w[tile.y - 1][tile.x].id == 2 && w[tile.y - 2][tile.x].id == 0 && w[tile.y + 1][tile.x].id == 0 {
                     possibilities.push([[tile.y, tile.x], [tile.y - 1, tile.x]])
                 } else if w[tile.y - 1][tile.x].id == 0 && w[tile.y + 1][tile.x].id == 2 && w[tile.y + 2][tile.x].id == 0 {
                     possibilities.push([[tile.y, tile.x], [tile.y + 1, tile.x]])
@@ -197,14 +260,18 @@ pub(crate) fn construct_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
                 } else if w[tile.y][tile.x - 1].id == 0 && w[tile.y][tile.x + 1].id == 2 && w[tile.y][tile.x + 2].id == 0 {
                     possibilities.push([[tile.y, tile.x], [tile.y, tile.x + 1]])
                 }
+                 */
             }
 
             if possibilities.len() == 0 { continue 'side; }
             else {
                 let index = prng.gen_range(0..possibilities.len());
-                w[possibilities[index][0][0]][possibilities[index][0][1]].id = 3;
-                if possibilities[index][1][0] != 0 && possibilities[index][1][1] != 0 {
-                    w[possibilities[index][1][0]][possibilities[index][1][1]].id = 3;
+                for (j, tile) in possibilities[index].iter().enumerate() {
+                    w[tile[0]][tile[1]].id = if j == 0 || j == possibilities[index].len() - 1 {
+                        3
+                    } else {
+                        0
+                    };
                 }
 
             }
