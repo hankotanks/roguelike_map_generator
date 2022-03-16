@@ -77,6 +77,14 @@ impl BoundingBox {
     pub(crate) fn x_range(&self) -> Range<usize> {
         self.x..(self.x_maxima() + 1)
     }
+
+    pub(crate) fn contains(&self, x: usize, y: usize) -> bool {
+        if self.x_range().contains(&x) && self.y_range().contains(&y) {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 // Abstraction for creating a new map array
