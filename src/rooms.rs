@@ -58,7 +58,7 @@ fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, all_rooms: &Vec<BoundingB
         width
     };
 
-    let mut attempts = 32;
+    let mut attempts = [4, 32];
     return loop {
         room.x = prng.gen_range(1..(w[0].len() - room.width - 1));
         room.y = prng.gen_range(1..(w.len() - room.height - 1));
@@ -69,9 +69,9 @@ fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, all_rooms: &Vec<BoundingB
             break Some(room);
         }
 
-        attempts -= 1;
+        attempts[1] -= 1;
 
-        if attempts == 0 {
+        if attempts[1] == 0 {
             let mut finished = false;
             match prng.gen_bool(0.5) {
                 true => {
@@ -86,8 +86,11 @@ fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, all_rooms: &Vec<BoundingB
                 break None;
             } else {
                 println!("Reset attempts!");
-                attempts += 32;
+                attempts[0] -= 1;
+                attempts[1] += 32;
             }
+
+            if attempts[0] == 0 { break None; }
         }
     };
 }
