@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 fn main() {
-
     let symbols: HashMap<u8, ColoredString> = HashMap::from([
         (0, " ".white().on_black()),
         (1, "#".black().on_blue()),
@@ -13,7 +12,7 @@ fn main() {
         (3, "+".magenta().on_black())
     ]);
     let now = Instant::now();
-    let world = build(32, 96, None);
+    let world = build(32, 64, None, true);
     let elapsed = now.elapsed();
 
     for y in 0..world.len() {
