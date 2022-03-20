@@ -8,7 +8,7 @@ use rand::rngs::StdRng;
 use crate::generator::{connect, get_regions, Map, polish, prune, step, Tile};
 use crate::rooms::construct_rooms;
 
-pub fn build(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Tile>> {
+pub fn build(height: usize, width: usize, seed: Option<u64>, rooms: bool) -> Vec<Vec<Tile>> {
     // create an PRNG from the provided seed if it has a value
     let mut prng = match seed {
         Some(s) => SeedableRng::seed_from_u64(s),
@@ -55,7 +55,7 @@ pub fn build(height: usize, width: usize, seed: Option<u64>) -> Vec<Vec<Tile>> {
     // widens paths and smooths out the cave
     for _ in 0..2 { polish(&mut world); }
 
-    construct_rooms(&mut world, &mut prng);
+    if rooms { construct_rooms(&mut world, &mut prng); }
 
     world
 }
@@ -74,7 +74,7 @@ fn convert_map(w: &Vec<Vec<Tile>>) -> Vec<Vec<u8>> {
 
 #[pyfunction]
 fn generate(height: usize, width: usize) -> PyResult<Vec<Vec<u8>>> {
-    let map = build(height, width, None);
+    let map = build(height, width, None, true);
     let map = convert_map(&map);
 
     Ok(map)
@@ -84,7 +84,7 @@ fn generate(height: usize, width: usize) -> PyResult<Vec<Vec<u8>>> {
 fn generate_from_seed(height: usize, width: usize, seed: u64) -> PyResult<Vec<Vec<u8>>> {
     let seed = Some(seed);
 
-    let map = build(height, width, seed);
+    let map = build(height, width, seed, true);
     let map = convert_map(&map);
 
     Ok(map)
