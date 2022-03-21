@@ -8,9 +8,7 @@ I created this project (my first shot at Rust) as an exercise in array manipulat
 
 ### Cave generation process
 
-<div style="width: 60%; height: 60%">
-    ![](/examples/01.PNG)
-</div>
+![](/examples/example.gif)
 
 ### Dungeons
 
