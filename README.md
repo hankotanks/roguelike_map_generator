@@ -12,10 +12,10 @@ I created this project (my first shot at Rust) as an exercise in array manipulat
 
 ### Dungeons
 
-<img src="./examples/01.png" width="128">
-<img src="./examples/02.png" width="128">
-<img src="./examples/03.png" width="128">
-<img src="./examples/04.png" width="128">
+| ![](./examples/01.png) | ![](./examples/02.png)  |
+|:----------------------:|:-----------------------:|
+| ![](./examples/03.png) | ![](./examples/04.png)  |
+
 
 ## Functions
 
