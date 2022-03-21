@@ -8,7 +8,9 @@ I created this project (my first shot at Rust) as an exercise in array manipulat
 
 ### Cave generation process
 
-<img src="./examples/example.gif" width="256">
+<div style="width: 60%; height: 60%">
+    ![](/examples/01.PNG)
+</div>
 
 ### Dungeons
 
@@ -20,7 +22,7 @@ I created this project (my first shot at Rust) as an exercise in array manipulat
 ## Functions
 
 ### Python
-Creates a cave world.
+Creates a simple cave world. Connectivity between caves is ensured.
 
 `generate(height: int, width: int) ⟶ List(List(int))`
 
@@ -36,7 +38,7 @@ Generates a cave with a series of connected rooms and corridors.
 
 `build(height: usize, width: usize, seed: Option<u64>, rooms: bool) -> Vec<Vec<Tile>>`
 
-A random seed will be used if seed is `Option::None` otherwise, the provided `Some` value will be unwrapped and used to seed the PRNG.
+A random seed will be used if seed is `Option::None` otherwise, the provided `Some` value will be unwrapped and used to seed the generation process.
 
 ## Requirements
 
