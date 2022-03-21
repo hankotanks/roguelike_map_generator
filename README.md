@@ -12,9 +12,9 @@ I created this project (my first shot at Rust) as an exercise in array manipulat
 
 ### Dungeons
 
-| ![](./examples/01.png) | ![](./examples/02.png)  |
-|:----------------------:|:-----------------------:|
-| ![](./examples/03.png) | ![](./examples/04.png)  |
+| ![](/examples/01.PNG) | ![](/examples/02.PNG) |
+|:---------------------:|:---------------------:|
+| ![](/examples/03.PNG) | ![](/examples/04.PNG) |
 
 
 ## Functions
