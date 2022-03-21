@@ -62,7 +62,7 @@ pub fn build(height: usize, width: usize, seed: Option<u64>, rooms: bool) -> Vec
     world
 }
 
-
+// The library returns a map of ints, not Tile instances
 fn convert_map(w: &Vec<Vec<Tile>>) -> Vec<Vec<u8>> {
     let mut converted = vec![vec![0u8; w[0].len()]; w.len()];
     for (y, row) in w.iter().enumerate() {
@@ -76,7 +76,7 @@ fn convert_map(w: &Vec<Vec<Tile>>) -> Vec<Vec<u8>> {
 
 #[pyfunction]
 fn generate(height: usize, width: usize) -> PyResult<Vec<Vec<u8>>> {
-    let map = build(height, width, None, true);
+    let map = build(height, width, None, false);
     let map = convert_map(&map);
 
     Ok(map)
@@ -84,6 +84,24 @@ fn generate(height: usize, width: usize) -> PyResult<Vec<Vec<u8>>> {
 
 #[pyfunction]
 fn generate_from_seed(height: usize, width: usize, seed: u64) -> PyResult<Vec<Vec<u8>>> {
+    let seed = Some(seed);
+
+    let map = build(height, width, seed, false);
+    let map = convert_map(&map);
+
+    Ok(map)
+}
+
+#[pyfunction]
+fn dungeon(height: usize, width: usize) -> PyResult<Vec<Vec<u8>>> {
+    let map = build(height, width, None, true);
+    let map = convert_map(&map);
+
+    Ok(map)
+}
+
+#[pyfunction]
+fn dungeon_from_seed(height: usize, width: usize, seed: u64) -> PyResult<Vec<Vec<u8>>> {
     let seed = Some(seed);
 
     let map = build(height, width, seed, true);
@@ -96,6 +114,8 @@ fn generate_from_seed(height: usize, width: usize, seed: u64) -> PyResult<Vec<Ve
 fn map_generator(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(generate, m)?)?;
     m.add_function(wrap_pyfunction!(generate_from_seed, m)?)?;
+    m.add_function(wrap_pyfunction!(dungeon, m)?)?;
+    m.add_function(wrap_pyfunction!(dungeon_from_seed, m)?)?;
 
     Ok(())
 }
