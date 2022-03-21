@@ -6,8 +6,9 @@ use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 
 use crate::generator::{connect, get_regions, Map, polish, prune, step, Tile};
-use crate::rooms::construct_rooms;
+use crate::rooms::build_rooms;
 
+// Generates the world
 pub fn build(height: usize, width: usize, seed: Option<u64>, rooms: bool) -> Vec<Vec<Tile>> {
     // create an PRNG from the provided seed if it has a value
     let mut prng = match seed {
@@ -55,7 +56,8 @@ pub fn build(height: usize, width: usize, seed: Option<u64>, rooms: bool) -> Vec
     // widens paths and smooths out the cave
     for _ in 0..2 { polish(&mut world); }
 
-    if rooms { construct_rooms(&mut world, &mut prng); }
+    // construct rooms if the parameter is set
+    if rooms { build_rooms(&mut world, &mut prng); }
 
     world
 }
