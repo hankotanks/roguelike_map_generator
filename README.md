@@ -13,8 +13,12 @@ I created this project (my first shot at Rust) as an exercise in array manipulat
 
 ### Dungeons
 
-<img src="./examples/01.PNG" width=50% height=50%> <img src="./examples/02.PNG" width=50% height=50%>
-<img src="./examples/03.PNG" width=50% height=50%> <img src="./examples/04.PNG" width=50% height=50%>
+<p float="left">
+    <img src="./examples/01.PNG" width=50% height=50%>
+    <img src="./examples/02.PNG" width=50% height=50%>
+    <img src="./examples/03.PNG" width=50% height=50%>
+    <img src="./examples/04.PNG" width=50% height=50%>
+</p>
 
 ## Functions
 
