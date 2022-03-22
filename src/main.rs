@@ -11,6 +11,7 @@ fn main() {
         (2, "%".black().on_magenta()),
         (3, "+".magenta().on_black())
     ]);
+
     let now = Instant::now();
     let world = build(32, 64, None, true);
     let elapsed = now.elapsed();

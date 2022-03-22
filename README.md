@@ -49,15 +49,21 @@ pip install -r requirements.txt
 ### Python
 
 ```
-import os, sys
+import sys
 
-from map_generator import generate_from_seed
+from map_generator import dungeon
 
-seed = int.from_bytes(os.urandom(8), 'big')
-world = generate_from_seed(32, 64, seed)
+symbols = {
+    0: " ",
+    1: "#",
+    2: "%",
+    3: "+"
+}
+
+world = dungeon(32, 64)
 for row in world:
     for cell in row:
-        sys.stdout.write("#" if cell else " ")
+        sys.stdout.write(symbols[cell])
     sys.stdout.write("\n")
 ```
 
@@ -68,7 +74,7 @@ use map_generator::build;
 use std::collections::HashMap;
 
 fn main() {
-    let symbols: HashMap<u8, ColoredString> = HashMap::from([
+    let symbols: HashMap<u8, String> = HashMap::from([
         (0, " "),
         (1, "#"),
         (2, "%"),
