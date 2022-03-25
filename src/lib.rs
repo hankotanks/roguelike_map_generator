@@ -6,7 +6,7 @@ use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 
 use crate::generator::{connect, get_regions, Map, polish, prune, step, Tile};
-use crate::rooms::build_rooms;
+use crate::rooms::add_rooms;
 
 // Generates the world
 pub fn build(height: usize, width: usize, seed: Option<u64>, rooms: bool) -> Vec<Vec<Tile>> {
@@ -57,7 +57,7 @@ pub fn build(height: usize, width: usize, seed: Option<u64>, rooms: bool) -> Vec
     for _ in 0..2 { polish(&mut world); }
 
     // construct rooms if the parameter is set
-    if rooms { build_rooms(&mut world, &mut prng); }
+    if rooms { add_rooms(&mut world, &mut prng); }
 
     world
 }
