@@ -86,7 +86,7 @@ fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, rooms: &Vec<BoundingBox>,
 
     // the first number represents the number of resets before the generation fails
     // the second is the number of locations to test
-    let mut attempts = [4, 32];
+    let mut attempts = [16, 16];
     return loop {
         // choose a random location
         room.x = prng.gen_range(1..(w[0].len() - room.width - 1));
