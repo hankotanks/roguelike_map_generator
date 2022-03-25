@@ -90,3 +90,9 @@ fn main() {
     }
 }
 ```
+
+## TODO
+
+- Series of connected rooms should have fewer exterior doors
+- Disconnected rooms should be pruned
+- Ores, POIs, set pieces
