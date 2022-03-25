@@ -4,7 +4,7 @@ A library that generates 2D-interconnected cave systems. Optionally, can be comp
 
 I created this project (my first shot at Rust) as an exercise in array manipulation, procedural generation, and algorithmic thinking as a whole. In the future, `map_generator` will serve as a basis for a [traditional roguelike](https://en.wikipedia.org/wiki/Roguelike) focused on spelunking, evasion, terrain traversal, etc...
 
-## Example
+## Examples
 
 ### Cave generation process
 
