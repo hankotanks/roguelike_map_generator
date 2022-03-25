@@ -101,7 +101,7 @@ fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, rooms: &Vec<BoundingBox>,
         // decrement the attempt counter
         attempts[1] -= 1;
 
-        // reduce the dimensions of the rooms if the placement attempts hace failed
+        // reduce the dimensions of the rooms if the placement attempts have failed
         if attempts[1] == 0 {
             let mut finished = false;
             match prng.gen_bool(0.5) {
@@ -127,36 +127,8 @@ fn get_new_room(w: &Vec<Vec<Tile>>, prng: &mut StdRng, rooms: &Vec<BoundingBox>,
     };
 }
 
-// Returns a list of sides
-// Each side represents an edge of the given BoundingBox
-fn get_sides_of_room<'a>(w: &'a Vec<Vec<Tile>>, bounds: &BoundingBox) -> Vec<Vec<&'a Tile>> {
-    let mut sides: Vec<Vec<&Tile>> = Vec::new();
-
-    let mut x_side: Vec<&Tile> = Vec::new();
-    let mut x_maxima_side: Vec<&Tile> = Vec::new();
-    for y in bounds.y_range() {
-        x_side.push(&w[y][bounds.x]);
-        x_maxima_side.push(&w[y][bounds.x_maxima()]);
-    }
-
-    sides.push(x_side);
-    sides.push(x_maxima_side);
-
-    let mut y_side: Vec<&Tile> = Vec::new();
-    let mut y_maxima_side: Vec<&Tile> = Vec::new();
-    for x in bounds.x_range() {
-        y_side.push(&w[bounds.y][x]);
-        y_maxima_side.push(&w[bounds.y_maxima()][x]);
-    }
-
-    sides.push(y_side);
-    sides.push(y_maxima_side);
-
-    sides
-}
-
 // Check if a certain point is contained in any of the generated rooms
-fn contained_in_rooms(rooms: &Vec<BoundingBox>, x: usize, y: usize) -> bool {
+fn occupied(rooms: &Vec<BoundingBox>, x: usize, y: usize) -> bool {
     for room in rooms.iter() {
         if room.contains(x, y) { return true; }
     }
@@ -166,7 +138,7 @@ fn contained_in_rooms(rooms: &Vec<BoundingBox>, x: usize, y: usize) -> bool {
 
 // Room generation function
 // Requires the random number generation instance because room placement should be seeded
-pub(crate) fn build_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
+pub(crate) fn add_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
     let mut rooms: Vec<BoundingBox> = Vec::new();
 
     // attempt to place as many disconnected 'entrance' rooms as possible
@@ -226,7 +198,7 @@ pub(crate) fn build_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
     // create doorways and corridors between adjacent rooms
     for room in rooms.iter() {
         let temp = w.clone();
-        let sides = get_sides_of_room(&temp, room);
+        let sides = room.sides(&temp);
 
         'side: for side in sides.iter() {
             if has_doors(side) { continue 'side; }
@@ -250,7 +222,7 @@ pub(crate) fn build_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
                     for y in tile.y..(if tile.y + max_corridor_length >= w.len() { w.len() - 1 } else { tile.y + max_corridor_length }) {
                         if w[y][tile.x].id == 1 || w[y][tile.x].id == 2 || w[y][tile.x].id == 3 {
                             current.push([y, tile.x]);
-                        } else if w[y][tile.x].id == 0 && contained_in_rooms(&rooms, tile.x, y) {
+                        } else if w[y][tile.x].id == 0 && occupied(&rooms, tile.x, y) {
                             possibilities.push(current.clone());
                             continue 'tile;
                         }
@@ -263,7 +235,7 @@ pub(crate) fn build_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
                     for y in ((if (tile.y as isize - max_corridor_length as isize) < 0isize { 0 } else { tile.y - max_corridor_length })..=tile.y).rev() {
                         if w[y][tile.x].id == 1 || w[y][tile.x].id == 2 || w[y][tile.x].id == 3 {
                             current.push([y, tile.x]);
-                        } else if w[y][tile.x].id == 0 && contained_in_rooms(&rooms, tile.x, y) {
+                        } else if w[y][tile.x].id == 0 && occupied(&rooms, tile.x, y) {
                             possibilities.push(current.clone());
                             continue 'tile;
                         }
@@ -276,7 +248,7 @@ pub(crate) fn build_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
                     for x in tile.x..(if tile.x + max_corridor_length >= w[0].len() { w[0].len() - 1 } else { tile.x + max_corridor_length }) {
                         if w[tile.y][x].id == 1 || w[tile.y][x].id == 2 || w[tile.y][x].id == 3 {
                             current.push([tile.y, x]);
-                        } else if w[tile.y][x].id == 0 && contained_in_rooms(&rooms, x, tile.y){
+                        } else if w[tile.y][x].id == 0 && occupied(&rooms, x, tile.y){
                             possibilities.push(current.clone());
                             continue 'tile;
                         }
@@ -289,7 +261,7 @@ pub(crate) fn build_rooms(w: &mut Vec<Vec<Tile>>, prng: &mut StdRng) {
                     for x in ((if (tile.x as isize - max_corridor_length as isize) < 0isize { 0 } else { tile.x - max_corridor_length })..=tile.x).rev() {
                         if w[tile.y][x].id == 1 || w[tile.y][x].id == 2 || w[tile.y][x].id == 3 {
                             current.push([tile.y, x]);
-                        } else if w[tile.y][x].id == 0 && contained_in_rooms(&rooms, x, tile.y) {
+                        } else if w[tile.y][x].id == 0 && occupied(&rooms, x, tile.y) {
                             possibilities.push(current.clone());
                             continue 'tile;
                         }

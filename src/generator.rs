@@ -85,6 +85,34 @@ impl BoundingBox {
 
         return false;
     }
+
+    // Returns a list of sides
+    // Each side represents an edge of the given BoundingBox
+    pub(crate) fn sides<'a>(&self, w: &'a Vec<Vec<Tile>>) -> Vec<Vec<&'a Tile>> {
+        let mut sides: Vec<Vec<&Tile>> = Vec::new();
+
+        let mut x_side: Vec<&Tile> = Vec::new();
+        let mut x_maxima_side: Vec<&Tile> = Vec::new();
+        for y in self.y_range() {
+            x_side.push(&w[y][self.x]);
+            x_maxima_side.push(&w[y][self.x_maxima()]);
+        }
+
+        sides.push(x_side);
+        sides.push(x_maxima_side);
+
+        let mut y_side: Vec<&Tile> = Vec::new();
+        let mut y_maxima_side: Vec<&Tile> = Vec::new();
+        for x in self.x_range() {
+            y_side.push(&w[self.y][x]);
+            y_maxima_side.push(&w[self.y_maxima()][x]);
+        }
+
+        sides.push(y_side);
+        sides.push(y_maxima_side);
+
+        sides
+    }
 }
 
 // Abstraction for creating a new map array
